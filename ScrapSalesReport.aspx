@@ -1,0 +1,567 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Operations.master" AutoEventWireup="true" CodeFile="ScrapSalesReport.aspx.cs" Inherits="ScrapSalesReport" %>
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="asp" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="Server">
+    <style type="text/css">
+        .container
+        {
+            max-width: 100%;
+        }
+        th
+        {
+            text-align: center;
+        }
+    </style>
+    <script type="text/javascript">
+        function CallPrint(strid) {
+            var divToPrint = document.getElementById(strid);
+            var newWin = window.open('', 'Print-Window', 'width=400,height=400,top=100,left=100');
+            newWin.document.open();
+            newWin.document.write('<html><body   onload="window.print()">' + divToPrint.innerHTML + '</body></html>');
+            newWin.document.close();
+        }
+    </script>
+    <script>
+        $(function () {
+            $('#hiddenrefno').css('display', 'none');
+            $('#Button1').css('display', 'none');
+            $('#Button2').css('display', 'none');
+        });
+    </script>
+    <script type="text/javascript">
+        function callHandler(d, s, e) {
+            $.ajax({
+                url: 'FleetManagementHandler.axd',
+                data: d,
+                type: 'GET',
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                async: true,
+                cache: true,
+                success: s,
+                Error: e
+            });
+        }
+        function get_scrapsales_details_click() {
+            var fromdate = document.getElementById('txtfromdate').value;
+            var todate = document.getElementById('txttodate').value
+            if (fromdate == "") {
+                alert("Please select from date");
+                return false;
+            }
+            if (todate == "") {
+                alert("Please select to date");
+                return false;
+            }
+            var data = { 'op': 'get_scrapsales_details_Report', 'fromdate': fromdate, 'todate': todate };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        filldetails(msg);
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            };
+            $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+        function filldetails(msg) {
+            var results = '<div  style="overflow:auto;"><table class="table table-bordered table-hover dataTable no-footer">';
+            results += '<thead><tr><th scope="col"></th><th scope="col">Ref No</th><th scope="col">Buyer Name</th><th scope="col">Invoice No</th><th scope="col">Invoice Date</th></tr></thead></tbody>';
+            for (var i = 0; i < msg.length; i++) {
+                var status = "";
+                if (msg[i].status == "V") {
+                    status = "Verified";
+                }
+                else {
+                    status = "Pending";
+                }
+                results += '<tr>';//<th><input id="btn_Print" type="button" onclick="printclick(this);" name="Edit" class="btn btn-primary" value="Print" /></th>
+                results += '<td data-title="brandstatus"><button type="button" title="Click Here To Print!" class="btn btn-info btn-outline btn-circle btn-lg m-r-5 printcls" onclick="printclick(this)"><span class="glyphicon glyphicon-print" style="top: 0px !important;"></span></button></td>';
+                results += '<td scope="row" class="1"  style="text-align:center;">' + msg[i].sno + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="2">' + msg[i].suppliername + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="2">' + msg[i].invoiceno + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="2">' + msg[i].invoicedate + '</td></tr>';
+            }
+            results += '</table></div>';
+            $("#divscrapdata").html(results);
+        }
+
+        function printclick(thisid) {
+            var refdcno = $(thisid).parent().parent().children('.1').html();
+            if (refdcno == "") {
+                alert("Please enter ref dc no");
+                return false;
+            }
+            var data = { 'op': 'get_scrapsales_Sub_details_Report', 'refdcno': refdcno };
+            var s = function (msg) {
+                if (msg) {
+                    if (msg.length > 0) {
+                        $('#divPrint').css('display', 'block');
+                        $('#hiddenrefno').css('display', 'none');
+                        $('#Button2').css('display', 'block');
+                        var ScrapSalesDetails = msg[0].ScrapSalesDetails;
+                        var SubScrapSalesDetails = msg[0].SubScrapSalesDetails;
+                        document.getElementById('spanbuyername').innerHTML = ScrapSalesDetails[0].suppliername;
+                        document.getElementById('spaninvoicedate').innerHTML = ScrapSalesDetails[0].invoicedate;
+                        document.getElementById('spninvoiceno').innerHTML = ScrapSalesDetails[0].invoiceno;
+                        document.getElementById('spanremarks').innerHTML = ScrapSalesDetails[0].remarks;
+                        document.getElementById('frombranchname').innerHTML = ScrapSalesDetails[0].branchname;
+
+//                        document.getElementById('tobranchname').innerHTML = stock_details[0].bname;
+//                        document.getElementById('fromstatename').innerHTML = stock_details[0].fromstate;
+//                        document.getElementById('tostatename').innerHTML = stock_details[0].tostate;
+//                        document.getElementById('spnremarks').innerHTML = stock_details[0].remarks;
+//                        document.getElementById('spn_tobranch_gstin').innerHTML = stock_details[0].tobranch_gstin;
+//                        document.getElementById('spn_frombranch_gstin').innerHTML = stock_details[0].frombranch_gstin;
+//                        document.getElementById('spn_tobranch_addr').innerHTML = stock_details[0].tobranch_address;
+//                        document.getElementById('spn_frombranch_addr').innerHTML = stock_details[0].frombranch_address;
+//                        document.getElementById('spnAddress').innerHTML = stock_details[0].Address;
+//                        document.getElementById('spnstate').innerHTML = stock_details[0].State;
+
+
+
+                        fill_sub_scrap_details(SubScrapSalesDetails);
+                    }
+                }
+                else {
+                }
+            };
+            var e = function (x, h, e) {
+            };
+            $(document).ajaxStart($.blockUI).ajaxStop($.unblockUI);
+            callHandler(data, s, e);
+        }
+        function fill_sub_scrap_details(msg) {
+            var results = '<div><table id="tbl_outward" class="table table-bordered table-hover dataTable no-footer" border="2" style="width:100%;">';
+            results += '<thead><tr style="background: antiquewhite;"><th scope="col" class="tdheading" rowspan="2">Sno</th><th scope="col" rowspan="2" class="tdheading">Item Code</th><th scope="col" class="tdheading" rowspan="2">Item Description</th><th scope="col" rowspan="2" class="tdheading">HSN CODE</th><th scope="col" rowspan="2" class="tdheading">Price (Rs.)</th><th scope="col" rowspan="2" class="tdheading">Qty</th><th scope="col" rowspan="2" class="tdheading">Taxable Value</th><th scope="col" colspan="2" class="tdheading">SGST</th><th scope="col" colspan="2" class="tdheading">CGST</th><th scope="col" colspan="2" class="tdheading">IGST</th><th scope="col" rowspan="2" class="tdheading">Total Amount</th></tr><tr style="background: antiquewhite;"><th class="tdheading">%</th><th class="tdheading">Amt (Rs.)</th><th class="tdheading">%</th><th class="tdheading">Amt (Rs.)</th><th class="tdheading">%</th><th class="tdheading">Amt (Rs.)</th></tr></thead></tbody>';
+            var j = 1;
+            for (var i = 0; i < msg.length; i++) {
+                var Quantity = 0;
+                Quantity = parseFloat(msg[i].qty);
+                var price = 0;
+                price = parseFloat(msg[i].cost).toFixed(2);
+                tax = parseFloat(msg[i].taxvalue);
+                var amount = 0;
+                amount = (Quantity * price).toFixed(2);
+                var collen = 0;
+                collen = msg.length;
+                results += '<tr><th scope="row" class="1" style="text-align:center;">' + j + '</th>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="2">' + msg[i].productname + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="2">' + msg[i].uim + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="qtycls">' + Quantity + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + price + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + amount + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + msg[i].cgst + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + msg[i].cgstvalue + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + msg[i].sgst + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + msg[i].sgstvalue + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + msg[i].igst + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + msg[i].igstvalue + '</td>';
+                results += '<td data-title="brandstatus" style="text-align:center;" class="4">' + msg[i].totalvalue + '</td>';
+                results += '</tr>';
+
+                j++;
+            }
+            var tot = "";
+            var tqty = "Total"
+            results += '<tr><th scope="row" class="1" style="text-align:center;"></th>';
+            results += '<td data-title="brandstatus" class="5"></td>';
+            results += '<td data-title="brandstatus" style="text-align:center;" class="2">' + tqty + '</td>';
+            results += '<td data-title="brandstatus" style="text-align:center;" class="3"><span id="totamcls"></span></td>';
+           
+            results += '<td data-title="brandstatus" class="5">' + tot + '</td>';
+            results += '<td data-title="brandstatus" style="text-align:center;" class="7"><span id="totammountcls"></span></td></tr>';
+            results += '</table></div>';
+            $("#div_itemdetails").html(results);
+            GetTotalCal();
+            GetTotalQty();
+        }
+        function GetTotalQty() {
+            var TotalQty = 0;
+            $('.qtycls').each(function (i, obj) {
+                var qty = $(this).text();
+                if (qty == "" || qty == "0") {
+                }
+                else {
+                    TotalQty += parseFloat(qty);
+                }
+            });
+            document.getElementById('totamcls').innerHTML = parseFloat(TotalQty).toFixed(2);
+        }
+        function GetTotalCal() {
+            var totamount = 0;
+            $('.ammountcls').each(function (i, obj) {
+                var qtyclass = $(this).text();
+                if (qtyclass == "" || qtyclass == "0") {
+                }
+                else {
+                    totamount += parseFloat(qtyclass);
+                }
+            });
+            document.getElementById('totammountcls').innerHTML = parseFloat(totamount).toFixed(2);
+
+
+            var cst = 0;
+            cst = (totamount * tax) / 100 || 0;
+            if (cst != 0) {
+                document.getElementById('spn_tax').innerHTML = parseFloat(cst).toFixed(2); ;
+            }
+            else {
+                $('#lbltax').hide();
+            }
+            var grandtotal = 0;
+            grandtotal = totamount + cst;
+            document.getElementById('spn_Total').innerHTML = parseFloat(grandtotal).toFixed(2); ;
+//            document.getElementById('recevied').innerHTML = toWords(grandtotal);
+        }
+        var th = ['', 'thousand', 'million', 'billion', 'trillion'];
+
+        var dg = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+
+        var tn = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+
+        var tw = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+        function toWords(s) {
+            s = s.toString();
+            s = s.replace(/[\, ]/g, '');
+            if (s != parseFloat(s)) return 'not a number';
+            var x = s.indexOf('.');
+            if (x == -1) x = s.length;
+            if (x > 15) return 'too big';
+            var n = s.split('');
+            var str = '';
+            var sk = 0;
+            for (var i = 0; i < x; i++) {
+                if ((x - i) % 3 == 2) {
+                    if (n[i] == '1') {
+                        str += tn[Number(n[i + 1])] + ' ';
+                        i++;
+                        sk = 1;
+                    } else if (n[i] != 0) {
+                        str += tw[n[i] - 2] + ' ';
+                        sk = 1;
+                    }
+                } else if (n[i] != 0) {
+                    str += dg[n[i]] + ' ';
+                    if ((x - i) % 3 == 0) str += 'hundred ';
+                    sk = 1;
+                }
+                if ((x - i) % 3 == 1) {
+                    if (sk) str += th[(x - i - 1) / 3] + ' ';
+                    sk = 0;
+                }
+            }
+            if (x != s.length) {
+                var y = s.length;
+                str += 'point ';
+                for (var i = x + 1; i < y; i++) str += dg[n[i]] + ' ';
+            }
+            return str.replace(/\s+/g, ' ');
+        }
+    </script>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
+    <section class="content-header">
+        <h1>
+            Scrap Report<small>Preview</small>
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="#"><i class="fa fa-dashboard"></i>Reports</a></li>
+            <li><a href="#">Scrap Report</a></li>
+        </ol>
+    </section>
+    <section class="content">
+        <div class="box box-info">
+            <div class="box-header with-border">
+                <h3 class="box-title">
+                    <i style="padding-right: 5px;" class="fa fa-cog"></i>Scrap Report
+                </h3>
+            </div>
+            <div class="box-body">
+                <div runat="server" id="d">
+                    <table>
+                        <tr>
+                            <td >
+                                <label>
+                                    From Date:</label>
+                            </td>
+                            <td>
+                                <input type="date" id="txtfromdate" class="form-control" />
+                            </td>
+                            <td>
+                                <label>
+                                    To Date:</label>
+                            </td>
+                            <td>
+                                <input type="date" id="txttodate" class="form-control" />
+                            </td>
+                            <td style="width: 5px;">
+                            </td>
+                            <td>
+                                <%--<input id="btn_save" type="button" class="btn btn-primary" name="submit" value='Get Details' onclick="get_scrapsales_details_click()" />--%>
+                                <div class="input-group">
+                                    <div class="input-group-addon">
+                                        <span class="glyphicon glyphicon-flash" onclick="get_scrapsales_details_click();"></span> <span id="btn_save" onclick="get_scrapsales_details_click();">Get Details</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div id="divscrapdata" style="height: 300px; overflow-y: scroll;">
+                    </div>
+                </div>
+                <div>
+                    <table id="hiddenrefno">
+                        <tr>
+                            <td>
+                                <label>
+                                    Ref No:</label>
+                            </td>
+                            <td>
+                                <input type="text" id="txt_refdcno" class="form-control" placeholder="Enter Ref No" />
+                            </td>
+                            <td style="width: 5px;">
+                            </td>
+                            <td>
+                                <input id="Button1" type="button" class="btn btn-primary" name="submit" value='Generate'/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                          <div id="divPrint" style="display: none;">
+                    <div style="border: 2px solid gray;">
+                        <div style="width: 17%; float: right; padding-top:5px;">
+                            <img src="Images/Vyshnavilogo.png" alt="Vyshnavi" width="100px" height="72px" />
+                            <br />
+                        </div>
+                        <div style="border: 1px solid gray;">
+                            <div style="font-family: Arial; font-size: 22px; font-weight: bold; color: Black;text-align: center;">
+                                <span>Sri Vyshnavi Dairy Specialities (P) Ltd </span>
+                                <br />
+                            </div>
+                            <div style="width:68%;text-align: center;padding-left: 14%;">
+                            <span id="spnAddress" class="spanrpt"></span>
+                            <span id="spn_gstin" class="spanrpt"></span>
+                            </div>
+                            <div style="width:40%;">
+                            <span id="spnstate" class="spanrpt" style="display:none;"></span><br />
+                            </div>
+                        </div>
+                   <div align="center" style="border-bottom: 1px solid gray; border-top: 1px solid gray;background-color: antiquewhite;">
+                        <span id="spn_inv_title" style="font-size: 18px; font-weight: bold;">Delivery Challan/Invoice</span>
+                   </div>
+                   <div style="width: 100%;">
+                        <table style="width: 100%;">
+                            <tr style="background-color: antiquewhite; border:2px solid gray;">
+                                <td style="text-align:center;" class="labelrpt">
+                                    <label><b>
+                                        Bill From </b></label>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td style="width: 49%;  padding-left:2%; border:2px solid gray;">
+                                    <label><b>
+                                        Name :</b></label>
+                                    <span class="branchname" style="font-weight:bold;" id="frombranchname"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>
+                                        Address :</b></label>
+                                    <span id="spn_frombranch_addr" class="spanrpt"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>
+                                        GSTIN :</b></label>
+                                    <span id="spn_frombranch_gstin" class="spanrpt"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>State :</b></label>
+                                    <span id="fromstatename" class="spanrpt"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>Code :</b></label>
+                                    <span id="fromstatecode" class="spanrpt"></span>
+                                </td>
+                                <td style="width: 50%;  padding-left:2%;border:2px solid gray;" >
+                                    <label id="lblsttype" class="spanrpt" style="font-weight:bold !important;">
+                                        </label>
+                                    <span id="spninvoiceno" class="tdsize"></span>
+                                    <br />
+                                    <label id="lblstdate" class="spanrpt" style="font-weight:bold;">
+                                        </label>
+                                    <span id="spaninvoicedate" class="tdsize"></span>
+                                    <br />
+                                    <label id="lbl_ref_no" style="font-size:12px;font-weight:bold">Reference Number</label>
+                                    <span id="spn_ref_no"></span>
+
+                                </td>
+                            </tr>
+                        
+                            <tr style="background-color: antiquewhite; border:2px solid gray;">
+                                <td class="labelrpt" style="text-align:center;"> 
+                                    <label><b>
+                                        Bill To </b></label>
+                                </td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td style="width: 49%; padding-left:2%;border:2px solid gray; padding-bottom:5%;">
+                                    <label class="labelrpt"><b>
+                                        Name :</b></label>
+                                    <span id="spanbuyername" class="spanrpt"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>
+                                        Address :</b></label>
+                                    <span id="spn_tobranch_addr" class="spanrpt"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>
+                                        GSTIN :</b></label>
+                                    <span id="spn_tobranch_gstin" class="spanrpt"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>
+                                        State :</b></label>
+                                    <span id="tostatename" class="spanrpt"></span>
+                                    <br />
+                                    <label class="labelrpt"><b>Code :</b></label>
+                                    <span id="tostatecode" class="spanrpt"></span>
+                                </td>
+                                <td style="width: 50%;  padding-left:2%; border:2px solid gray;">
+                                    <label><b>
+                                        Tranport Mode:</b></label>
+                                    <span id="spn_transport_mode"></span>
+                                    <br />
+                                    <label><b>
+                                        Vehicle No:</b></label>
+                                    <span id="spn_vehicle_no"></span>
+                                    <br />
+                                    <label><b>
+                                        Date of Transfer:</b></label>
+                                    <span id="spn_dotransfer"></span>
+                                </td>
+                            </tr>
+                        </table>
+                        
+                        </div>
+                         <div  style="border-bottom: 1px solid gray; border-top: 1px solid gray;text-align: center;">
+                       <br />
+                    </div>
+                        <div id="div_itemdetails">
+                        </div>
+                        <div>
+                            <table class="table table-bordered table-hover dataTable no-footer" style="width:100%;">
+                                <tr>
+                                    <td style="width: 15%;">
+                                    </td>
+                                    <td style="width: 15%;">
+                                    </td>
+                                    <td style="width: 15%;">
+                                    </td>
+                                    <td style="width: 15%;" colspan="2">
+                                        <label class="tdheading" id="lblfright">
+                                            Fright Amount:</label>
+                                    </td>
+                                    <td style="width: 15%;">
+                                        <span id="spn_fright_amount" class="tdsize"></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                        <label class="tdheading" id="lbltax">
+                                            Tax</label>
+                                    </td>
+                                    <td>
+                                        <span id="spn_Tax" class="tdsize"></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td colspan="2">
+                                        <label style="font-size: 13px;">
+                                            TOTAL AMOUNT :</label>
+                                    </td>
+                                    <td>
+                                        <span id="spn_totalpoamt" style="font-size: 12px;"></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td colspan="2">
+                                        <label style="font-size: 13px;">
+                                            Round off Diff Amount :</label>
+                                    </td>
+                                    <td>
+                                        <span id="spn_roundoffamt" style="font-size: 12px;"></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td colspan="2">
+                                        <label class="tdheading">
+                                            Total Amount:</label>
+                                    </td>
+                                    <td>
+                                        <span id="spn_Total" class="tdheading"></span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        Rupees in Words :&nbsp;<span id="spn_grandtotal_words" class="spanrpt"></span>
+                    </div>
+                    <div>
+                    <label class="tdheading">
+                            1. Remarks :</label>
+                        <span id="spanremarks" class="spanrpt"></span>
+                    </div>
+                    <br />
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 25%;">
+                                <span style="font-weight: bold;" class="tdsize">INDENTED BY</span>
+                            </td>
+                            <td style="width: 25%;">
+                                <span style="font-weight: bold;" class="tdsize">APPROVED BY</span>
+                            </td>
+                            <td style="width: 25%;">
+                                <span style="font-weight: bold;" class="tdsize">STORES</span>
+                            </td>
+                            <td style="width: 25%;">
+                                <span style="font-weight: bold;" class="tdsize">RECEIVER SIGNATURE</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <%--<input id="Button2" type="button" class="btn btn-primary" name="submit" value='Print' onclick="javascript:CallPrint('divPrint');" />--%>
+                <div class="input-group" id="Button2" style="display:none;padding-right: 90%;">
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-print" onclick="javascript: CallPrint('divPrint');"></span> <span id="Span2" onclick="javascript: CallPrint('divPrint');">Print</span>
+                    </div>
+                </div>
+                <asp:Label ID="lblmsg" runat="server" Font-Size="20px" ForeColor="Red" Text=""></asp:Label>
+            </div>
+        </div>
+    </section>
+</asp:Content>
